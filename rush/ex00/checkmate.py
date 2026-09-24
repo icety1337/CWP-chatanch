@@ -1,69 +1,78 @@
-def checkmate(board: str):
+def checkmate(board_text: str):
+    #เช็คว่า king จะโดนอีกฝั่งตีไหม
 
-    lines = board.split('\n')
-    grid = [list(line) for line in lines if line]
-    
-    if not grid:
+    # ตัดบรรทัดว่างออก ตัว \n แล้วแปลงแต่ละแถวให้เข้าถึงช่องด้วย index ได้ 
+    board_lines = board_text.split('\n')
+    board_grid = [list(line) for line in board_lines if line]
+
+    if not board_grid:
         print("Error")
         return
 
-    rows = len(grid)
-    cols = len(grid[0])
+    board_size = len(board_grid)
+    expected_row_length = len(board_grid[0])
 
-    for row in grid:
-        if len(row) != cols:
+    # เช็คสี่เหลี่ยมจัตุรัส บนล่างซ้ายขวา
+    for board_row in board_grid:
+        if len(board_row) != expected_row_length:
             print("Error")
             return
-    if rows != cols:
+    if board_size != expected_row_length:
         print("Error")
         return
 
-    king_pos = None
-    for r in range(rows):
-        for c in range(cols):
-            if grid[r][c] == 'K':
-                if king_pos is not None:
+    king_position = None
+    for row_index in range(board_size):
+        for column_index in range(expected_row_length):
+            if board_grid[row_index][column_index] == 'K':
+                # เช็คว่าคิงเกิน 1 ป่าว
+                if king_position is not None:
                     print("Error")
                     return
-                king_pos = (r, c)
-                
-    if king_pos is None:
+                king_position = (row_index, column_index)
+
+    if king_position is None:
         print("Error")
         return
-    kr, kc = king_pos
-    
-    ortho_dirs = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    diag_dirs = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-    in_check = False
+    king_row, king_column = king_position
 
-    for dr, dc in ortho_dirs:
-        r, c = kr + dr, kc + dc
-        while 0 <= r < rows and 0 <= c < cols:
-            char = grid[r][c]
-            if char in ['P', 'B', 'R', 'Q']:
-                if char in ['R', 'Q']:
-                    in_check = True
+    orthogonal_directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    diagonal_directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+
+    is_king_in_check = False
+
+    # ไล่จาก king ออกไปในแนวตรงทีละทิศทาง
+    # หมากตัวแรกที่พบจะบังหมากทุกตัวที่อยู่ถัดไปในแนวเดียวกัน
+    for row_step, column_step in orthogonal_directions:
+        square_row, square_column = king_row + row_step, king_column + column_step
+        while 0 <= square_row < board_size and 0 <= square_column < expected_row_length:
+            piece = board_grid[square_row][square_column]
+            if piece in ['P', 'B', 'R', 'Q']:
+                if piece in ['R', 'Q']:
+                    is_king_in_check = True
                 break
-            r += dr
-            c += dc
+            square_row += row_step
+            square_column += column_step
 
-    for dr, dc in diag_dirs:
-        r, c = kr + dr, kc + dc
-        dist = 1
-        while 0 <= r < rows and 0 <= c < cols:
-            char = grid[r][c]
-            if char in ['P', 'B', 'R', 'Q']:
-                if char in ['B', 'Q']:
-                    in_check = True
-                elif char == 'P' and dist == 1 and dr == 1:
-                    in_check = True
+    # ตัวแหว่งๆ [bishop] กับควีน โจมตีแนวทแยง ไปได้สุดเลย แต่ไอ้ตัวกระจอกสุด [pawn] โจมตีได้เพียงช่องทแยง
+    # ด้านหน้า 1 ช่อง ทิศที่เลขแถวเพิ่มขึ้น
+    for row_step, column_step in diagonal_directions:
+        square_row, square_column = king_row + row_step, king_column + column_step
+        distance_from_king = 1
+        while 0 <= square_row < board_size and 0 <= square_column < expected_row_length:
+            piece = board_grid[square_row][square_column]
+            if piece in ['P', 'B', 'R', 'Q']:
+                if piece in ['B', 'Q']:
+                    is_king_in_check = True
+                elif piece == 'P' and distance_from_king == 1 and row_step == 1:
+                    is_king_in_check = True
                 break
-            r += dr
-            c += dc
-            dist += 1
+            square_row += row_step
+            square_column += column_step
+            distance_from_king += 1
 
-    if in_check:
+    if is_king_in_check:
         print("Success")
     else:
         print("Fail")
